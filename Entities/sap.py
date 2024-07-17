@@ -8,6 +8,16 @@ from time import sleep
 import traceback
 from typing import Literal
 
+def _print(*args, end="\n"):
+    if not end.endswith("\n"):
+        end += "\n"
+    value = ""
+    for arg in args:
+        value += f"{arg} " 
+    
+    print(datetime.now().strftime(f"[%d/%m/%Y - %H:%M:%S] - {value}"), end=end)
+
+
 class SAPManipulation():
     @property
     def ambiente(self) -> str:
@@ -96,7 +106,7 @@ class SAPManipulation():
 
     #@usar_sap
     def fechar_sap(self):
-        print("fechando SAP!")
+        _print("fechando SAP!")
         try:
             sleep(1)
             self.session.findById("wnd[0]").close()
@@ -107,13 +117,13 @@ class SAPManipulation():
                 self.session.findById('wnd[2]/usr/btnSPOP-OPTION1').press()
         except Exception as error:
             if not "(-2147417848, 'O objeto chamado foi desconectado de seus clientes.', None, None)" in str(error):
-                print(f"não foi possivel fechar o SAP {type(error)} | {error}")
+                _print(f"não foi possivel fechar o SAP {type(error)} | {error}")
 
     @start_SAP
     def _listar(self, campo):
         cont = 0
         for child_object in self.session.findById(campo).Children:
-            print(f"{cont}: ","ID:", child_object.Id, "| Type:", child_object.Type, "| Text:", child_object.Text)
+            _print(f"{cont}: ","ID:", child_object.Id, "| Type:", child_object.Type, "| Text:", child_object.Text)
             cont += 1
 
     def _verificar_sap_aberto(self) -> bool:
@@ -124,7 +134,7 @@ class SAPManipulation():
     
     @start_SAP
     def _teste(self):
-        print("testado")
+        _print("testado")
   
 if __name__ == "__main__":
     pass

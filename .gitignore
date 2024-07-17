@@ -1,6 +1,8 @@
 #Personal
 *#material
 *test_execute.py
+*.logs
+*download_relatorios
 
 
 
