@@ -16,9 +16,9 @@ class Log:
     @property
     def file_path(self) -> str:
         return self.__file_path
-    def __init__(self, name:str, *, path:str=os.path.join(os.getcwd(), ".logs")) -> None:
-        if not name.endswith(".txt"):
-            name += ".txt"
+    
+    def __init__(self, _name:str, *, path:str=os.path.join(os.getcwd(), ".logs")) -> None:
+        name = f"-->TIME<--_Erro__{_name}__"
             
         if not os.path.exists(path):
             os.makedirs(path)
@@ -26,7 +26,10 @@ class Log:
     
     def register_error(self, *, __print:bool=False) -> None:
         _traceback:str = traceback.format_exc()
-        file_path:str = self.file_path.replace(".txt", datetime.now().strftime("_Error_%d%b%Y-%H%M%S.txt"))
+        file_path:str = self.file_path.replace("-->TIME<--", datetime.now().strftime("%Y%m%d-%H%M%S"))
+        if not file_path.endswith(".txt"):
+            file_path += ".txt"
+        
         with open(file_path, 'w', encoding='utf-8')as _file:
             _file.write(_traceback)
         if __print:

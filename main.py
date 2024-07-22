@@ -44,7 +44,7 @@ class Execute(ExtrairSAP):
                 except PermissionError:
                     if Functions.fechar_excel(file):
                         os.unlink(file)
-        _print("Script Finalizado!")
+        _print("Script Finalizado com Sucesso!")
 
 if __name__ == "__main__":
     try:
@@ -55,5 +55,5 @@ if __name__ == "__main__":
         bot.start(destino=f"C:\\Users\\{getuser()}\\PATRIMAR ENGENHARIA S A\\RPA - Documentos\\RPA - Dados\\Follow UP\\relatorios")
         
     except Exception as error:
-        Log('main.py').register_error()
+        Log('main').register_error()
     
