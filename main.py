@@ -1,5 +1,3 @@
-from ntpath import join
-from os import getcwd
 from Entities.extrair_rel import ExtrairSAP
 from Entities.credenciais import Credential
 from Entities.logs import Log

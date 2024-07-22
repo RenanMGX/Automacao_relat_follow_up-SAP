@@ -1,18 +1,15 @@
 import json
 import os
 from copy import deepcopy
-import traceback
 from random import randint
 from getpass import getuser
 from typing import Literal, Dict
 
 class Credential:
-    def __init__(self, name_file:Literal["SAP_PRD", "SAP_QAS", "SAP_QAS-Renan"], path:str=f"C:\\Users\\{getuser()}\\PATRIMAR ENGENHARIA S A\\RPA - Documentos\\RPA - Dados\\CRD\\.patrimar_rpa\\credenciais\\") -> None:
+    def __init__(self, name_file:Literal["SAP_PRD", "SAP_QAS"], path:str=f"C:\\Users\\{getuser()}\\PATRIMAR ENGENHARIA S A\\RPA - Documentos\\RPA - Dados\\CRD\\.patrimar_rpa\\credenciais\\") -> None:
         name:str = str(name_file)
         if not name.endswith('.json'):
             name += '.json'
-        
-        
         
         temp_path:str
         if "\\" in path:
@@ -64,7 +61,6 @@ class Credential:
             new_result[key] = self.decifrar(value, new_result['key'])
             
         return new_result
-                            
     
     def save(self, **kargs) -> None:
         token = randint(500,6000)
@@ -112,7 +108,7 @@ class Credential:
         return self.criar_cifra(text, -key)
         
 if __name__ == "__main__":
-    crd = Credential('SAP_QAS-Renan')
+    crd = Credential('SAP_QAS')
     
     
     print(crd.load())

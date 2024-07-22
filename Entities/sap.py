@@ -1,5 +1,4 @@
 from .logs import Log
-from getpass import getuser
 import win32com.client
 from datetime import datetime
 import psutil
