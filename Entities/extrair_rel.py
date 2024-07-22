@@ -23,6 +23,14 @@ class ExtrairSAP(SAPManipulation):
                 'contratos': ['FOLLOW UP CONTRATOS'],
                 'contratos_zrfe': ['ZRFE FOLLOW UP CONTRATOS']
                 }
+        
+    @property
+    def layout(self) -> dict:
+        return {
+                'compras': ['FOLLOW UP COMPRAS - RPA', 'FOLLOW UP - RPA'],
+                'contratos': ['FOLLOW UP CONTRATOS - RPA', 'FOLLOW UP - RPA'],
+                'contratos_zrfe': []
+                }
     
     # @property 
     # def variante_contratos(self) -> list:
@@ -62,11 +70,12 @@ class ExtrairSAP(SAPManipulation):
         transacao, tipo = transacao.split(' ')[0:2]#type: ignore
         
         variante:list = self.variante[tipo]
+        layout:list = self.layout[tipo]
         file_name:str = f"{transacao.upper()} {tipo.upper()}.xlsx"
         caminho:str = self.download_path
         
         try:
-            rel = self.__extrair_relatorio(transacao=transacao,variante=variante,caminho=caminho,file_name=file_name)
+            rel = self.__extrair_relatorio(transacao=transacao,variante=variante,caminho=caminho,file_name=file_name, layout=layout)
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
             return rel
         except Exception as error:
@@ -81,7 +90,7 @@ class ExtrairSAP(SAPManipulation):
         caminho:str = self.download_path
         
         try:
-            rel = self.__extrair_relatorio(transacao=transacao,variante=[],caminho=caminho,file_name=file_name, tem_variante=False)
+            rel = self.__extrair_relatorio(transacao=transacao,variante=[],caminho=caminho,file_name=file_name, layout=[])
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
             return rel
         except Exception as error:
@@ -91,22 +100,25 @@ class ExtrairSAP(SAPManipulation):
         
         
     @SAPManipulation.start_SAP      
-    def __extrair_relatorio(self, *, transacao:str, variante:list, caminho:str, file_name:str, tem_variante:bool=True) -> str:
+    def __extrair_relatorio(self, *, transacao:str, variante:list, caminho:str, file_name:str, layout:list) -> str:
         self.session.findById("wnd[0]/tbar[0]/okcd").text = f"/n {transacao}"
         self.session.findById("wnd[0]").sendVKey(0)
         #self.session.findById("wnd[0]/tbar[1]/btn[17]").press()
         
-        if tem_variante:
+        #selecionar Variante
+        if variante:
             error:str|Exception = ""
             for var in variante:
                 try:
                     self.session.findById("wnd[0]/tbar[1]/btn[17]").press()
                     try:
+                        #se abrir a tela de variantes que precisa digitar nome e descrição ele vai limpar e executar para ir até a lista das variantes
                         self.session.findById("wnd[1]/usr/txtV-LOW").text = ""
                         self.session.findById("wnd[1]/usr/txtENAME-LOW").text = ""
                         self.session.findById("wnd[1]/tbar[0]/btn[8]").press()
                     except:
                         pass
+                    #irá fazer uma pesquita pelo nome da variante para selecionar ela
                     self.session.findById("wnd[1]/usr/cntlALV_CONTAINER_1/shellcont/shell").currentCellColumn = "TEXT"
                     self.session.findById("wnd[1]/usr/cntlALV_CONTAINER_1/shellcont/shell").selectedRows = "0"
                     self.session.findById("wnd[1]/usr/cntlALV_CONTAINER_1/shellcont/shell").contextMenu()
@@ -126,6 +138,7 @@ class ExtrairSAP(SAPManipulation):
                         
                     self.session.findById("wnd[1]/usr/cntlALV_CONTAINER_1/shellcont/shell").doubleClickCurrentCell()
                     error = ""
+                    break
                 except Exception as e:
                     error = e
                     
@@ -133,6 +146,43 @@ class ExtrairSAP(SAPManipulation):
                 raise error
         
         self.session.findById("wnd[0]/tbar[1]/btn[8]").press() #Executa a transação
+        
+        #selecionar Layout
+        if layout:
+            error2:str|Exception = ""
+            for lay in layout:
+                try:
+                    try:
+                        #caso não encontre o botão para abrir layout ele vai ignorar essa parte e vai partir para gerar o excel
+                        self.session.findById("wnd[0]/tbar[1]/btn[33]").press()
+                    except:
+                        break
+                    #irá fazer uma pesquisa de layout para selecionar ele
+                    try:
+                        self.session.findById("wnd[1]/usr/subSUB_CONFIGURATION:SAPLSALV_CUL_LAYOUT_CHOOSE:0500/cntlD500_CONTAINER/shellcont/shell").setCurrentCell(0,"TEXT")
+                    except:
+                        continue
+                    self.session.findById("wnd[1]/usr/subSUB_CONFIGURATION:SAPLSALV_CUL_LAYOUT_CHOOSE:0500/cntlD500_CONTAINER/shellcont/shell").selectedRows = "0"
+                    self.session.findById("wnd[1]/usr/subSUB_CONFIGURATION:SAPLSALV_CUL_LAYOUT_CHOOSE:0500/cntlD500_CONTAINER/shellcont/shell").contextMenu()
+                    self.session.findById("wnd[1]/usr/subSUB_CONFIGURATION:SAPLSALV_CUL_LAYOUT_CHOOSE:0500/cntlD500_CONTAINER/shellcont/shell").selectContextMenuItem("&FILTER")
+                    self.session.findById("wnd[2]/usr/ssub%_SUBSCREEN_FREESEL:SAPLSSEL:1105/ctxt%%DYN001-LOW").text = "FOLLOW UP COMPRAS - RPA"
+                    self.session.findById("wnd[2]/tbar[0]/btn[0]").press()
+                    self.session.findById("wnd[1]/usr/subSUB_CONFIGURATION:SAPLSALV_CUL_LAYOUT_CHOOSE:0500/cntlD500_CONTAINER/shellcont/shell").currentCellColumn = "TEXT"
+                    try:
+                        self.session.findById("wnd[1]/usr/subSUB_CONFIGURATION:SAPLSALV_CUL_LAYOUT_CHOOSE:0500/cntlD500_CONTAINER/shellcont/shell").selectedRows = "0"
+                        self.session.findById("wnd[1]/usr/subSUB_CONFIGURATION:SAPLSALV_CUL_LAYOUT_CHOOSE:0500/cntlD500_CONTAINER/shellcont/shell").clickCurrentCell()
+                        error2 = ""
+                        break
+                    except AttributeError:
+                        error = Exception(f"não foi possivel localizar a variante '{str(variante)}'")
+                        self.session.findById("wnd[1]/tbar[0]/btn[12]").press()
+                except Exception as e2:
+                    error2 = e2
+            
+            if error2 != "":
+                raise error2
+        
+        #import pdb; pdb.set_trace()
         
         try:
             self.session.findById("wnd[0]/mbar/menu[0]/menu[3]/menu[1]").select()
@@ -154,11 +204,13 @@ class ExtrairSAP(SAPManipulation):
         #import pdb;pdb.set_trace()
     
     @SAPManipulation.start_SAP
-    def __encerrar(self, fechar_sap_no_final:Literal[True]):
+    def __encerrar(self, fechar_sap_no_final:bool):
         pass
     
     def finalizar_sap(self):
         self.__encerrar(fechar_sap_no_final=True)
+        _print("Relatorios finalizados SAP encerrado!")
+
     
 if __name__ == "__main__":
     pass

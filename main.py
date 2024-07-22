@@ -32,13 +32,13 @@ class Execute(ExtrairSAP):
             self.relatorio(transacao='zmm010 contratos'),
             self.relatorio_sem_variante(transacao='mkvz contratos')
         ]
+        
         self.finalizar_sap()
-        _print("Relatorios finalizados SAP encerrado!")
         
         for file in files:
             if os.path.exists(file):
                 copy2(file, destino)
-                _print(f" arquivo {os.path.basename(file)} copiado !")
+                _print(f"arquivo {os.path.basename(file)} copiado !")
                 try:
                     os.unlink(file)
                 except PermissionError:

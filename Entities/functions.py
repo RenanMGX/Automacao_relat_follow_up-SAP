@@ -2,21 +2,32 @@ import xlwings as xw
 from xlwings.main import Book
 from time import sleep
 from datetime import datetime
+import re
 
 class Functions:
     @staticmethod
     def fechar_excel(path:str, *, timeout:int=5) -> bool:
-        for _ in range(timeout):
-            for app in xw.apps:
-                for open_app in app.books:
-                    open_app:Book
-                    if open_app.name in path:
-                        open_app.close()
-                        if len(xw.apps) <= 0:
-                            app.kill()
-                        return True
-            sleep(1)
-        return False
+        try:
+            achou:bool = False
+            for _ in range(timeout):
+                for app in xw.apps:
+                    for open_app in app.books:
+                        open_app:Book
+                        if open_app.name in path:
+                            open_app.close()
+                            if len(xw.apps) <= 0:
+                                app.kill()                        
+                            achou = True
+                        if not re.search(r'Pasta[0-9]+', open_app.name) is None:
+                            open_app.close()
+                            if len(xw.apps) <= 0:
+                                app.kill()                        
+                sleep(1)
+            if achou:
+                return True
+            return False
+        except:
+            return False
     
     @staticmethod
     def excel_open() -> list:

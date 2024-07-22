@@ -75,6 +75,7 @@ class SAPManipulation():
                 connection = application.OpenConnection(self.__ambiente, True) # type: ignore
                 self.__session = connection.Children(0)# type: ignore
                 
+                
                 self.session.findById("wnd[0]/usr/txtRSYST-BNAME").text = self.__user # Usuario
                 self.session.findById("wnd[0]/usr/pwdRSYST-BCODE").text = self.__password # Senha
                 self.session.findById("wnd[0]").sendVKey(0)
