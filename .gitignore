@@ -3,6 +3,7 @@
 *test_execute.py
 *.logs
 *download_relatorios
+*.vscode
 
 
 

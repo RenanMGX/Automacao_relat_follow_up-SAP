@@ -3,6 +3,8 @@ from .sap import SAPManipulation
 import os
 from .functions import Functions, _print
 from .logs import Log
+from datetime import datetime
+import pandas as pd
 
 class ExtrairSAP(SAPManipulation):
     @property
@@ -71,8 +73,19 @@ class ExtrairSAP(SAPManipulation):
         file_name:str = f"{transacao.upper()} {tipo.upper()}.xlsx"
         caminho:str = self.download_path
         
+
         try:
-            rel = self.__extrair_relatorio(transacao=transacao,variante=variante,caminho=caminho,file_name=file_name, layout=layout)
+            for x in range(5):
+                erro:str|Exception = ""
+                try:
+                    rel = self.__extrair_relatorio(transacao=transacao,variante=variante,caminho=caminho,file_name=file_name, layout=layout)
+                    erro = ""
+                    break
+                except Exception as error:
+                    erro = error
+            if erro != "":
+                raise erro #type: ignore
+                    
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
             return rel
         except Exception as error:
@@ -87,7 +100,17 @@ class ExtrairSAP(SAPManipulation):
         caminho:str = self.download_path
         
         try:
-            rel = self.__extrair_relatorio(transacao=transacao,variante=[],caminho=caminho,file_name=file_name, layout=[])
+            for x in range(5):
+                erro = ""
+                try:
+                    rel = self.__extrair_relatorio(transacao=transacao,variante=[],caminho=caminho,file_name=file_name, layout=[])
+                    erro = ""
+                    break
+                except Exception as error:
+                    erro = error
+            if erro != "":
+                raise erro #type: ignore
+            
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
             return rel
         except Exception as error:
@@ -95,13 +118,24 @@ class ExtrairSAP(SAPManipulation):
             _print(f"erro ao gerar relatorio '{file_name}' vide pasta logs")
             return "None"
         
+    def relatorio_datas(self):
+        agora = datetime.now()
+        table = {
+            "Data hora": [agora.isoformat()],
+            "Data": [agora.strftime('%d/%m/%Y')],
+            "Hora": [agora.strftime('%H:%M:%S.%f')]
+        }
+        file = os.path.join(self.download_path, "data_atualização.json")
+        
+        pd.DataFrame(table).to_json(file, index=False)
+        return file
         
     @SAPManipulation.start_SAP      
-    def __extrair_relatorio(self, *, transacao:str, variante:list, caminho:str, file_name:str, layout:list) -> str:
+    def __extrair_relatorio(self, *, transacao:str, variante:list, caminho:str, file_name:str, layout:list, timeout:int=3) -> str:
         self.session.findById("wnd[0]/tbar[0]/okcd").text = f"/n {transacao}"
         self.session.findById("wnd[0]").sendVKey(0)
         #self.session.findById("wnd[0]/tbar[1]/btn[17]").press()
-        
+                
         #selecionar Variante
         if variante:
             error:str|Exception = ""
@@ -132,18 +166,19 @@ class ExtrairSAP(SAPManipulation):
                         error = Exception(f"não foi possivel localizar a variante '{str(variante)}'")
                         self.session.findById("wnd[1]/tbar[0]/btn[12]").press()
                         continue
-                        
+                            
+                            
                     self.session.findById("wnd[1]/usr/cntlALV_CONTAINER_1/shellcont/shell").doubleClickCurrentCell()
                     error = ""
                     break
                 except Exception as e:
                     error = e
-                    
+                            
             if error != "":
                 raise error
-        
+                
         self.session.findById("wnd[0]/tbar[1]/btn[8]").press() #Executa a transação
-        
+                
         #selecionar Layout
         if layout:
             error2:str|Exception = ""
@@ -175,12 +210,12 @@ class ExtrairSAP(SAPManipulation):
                         self.session.findById("wnd[1]/tbar[0]/btn[12]").press()
                 except Exception as e2:
                     error2 = e2
-            
+                    
             if error2 != "":
                 raise error2
-        
+                
         #import pdb; pdb.set_trace()
-        
+                    
         try:
             self.session.findById("wnd[0]/mbar/menu[0]/menu[3]/menu[1]").select()
         except:
@@ -189,24 +224,26 @@ class ExtrairSAP(SAPManipulation):
             except:
                 self.session.findById("wnd[0]/usr/shell").pressToolbarContextButton("&MB_EXPORT")
                 self.session.findById("wnd[0]/usr/shell").selectContextMenuItem("&XXL")
-        
+                
         self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
         self.session.findById("wnd[1]/usr/ctxtDY_PATH").text = caminho
         self.session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = file_name
         self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
-        
+                
         file_full_path = os.path.join(caminho, file_name)
         Functions.fechar_excel(file_full_path)
         return file_full_path
         #import pdb;pdb.set_trace()
     
+    
     @SAPManipulation.start_SAP
     def __encerrar(self, fechar_sap_no_final:bool):
         pass
     
-    def finalizar_sap(self):
+    def finalizar_sap(self, *, mostrar_na_tela:bool=True):
         self.__encerrar(fechar_sap_no_final=True)
-        _print("Relatorios finalizados SAP encerrado!")
+        if mostrar_na_tela:
+            _print("Relatorios finalizados SAP encerrado!")
 
     
 if __name__ == "__main__":

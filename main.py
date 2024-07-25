@@ -28,7 +28,8 @@ class Execute(ExtrairSAP):
             self.relatorio(transacao='zmm009 contratos'),
             self.relatorio(transacao='zmm009 contratos_zrfe'),
             self.relatorio(transacao='zmm010 contratos'),
-            self.relatorio_sem_variante(transacao='mkvz contratos')
+            self.relatorio_sem_variante(transacao='mkvz contratos'),
+            self.relatorio_datas()
         ]
         
         self.finalizar_sap()
