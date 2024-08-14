@@ -5,6 +5,7 @@ from Entities.functions import Functions, _print
 from shutil import copy2
 from getpass import getuser
 import os
+import traceback
 
 class Execute(ExtrairSAP):
     def __init__(self, *, user: str = "", password: str = "", ambiente: str = "") -> None:
@@ -29,20 +30,27 @@ class Execute(ExtrairSAP):
             self.relatorio(transacao='zmm009 contratos_zrfe'),
             self.relatorio(transacao='zmm010 contratos'),
             self.relatorio_sem_variante(transacao='mkvz contratos'),
+            self.extrair_relatorio_base(),
             self.relatorio_datas()
         ]
         
         self.finalizar_sap()
         
         for file in files:
-            if os.path.exists(file):
-                copy2(file, destino)
-                _print(f"arquivo {os.path.basename(file)} copiado !")
-                try:
-                    os.unlink(file)
-                except PermissionError:
-                    if Functions.fechar_excel(file):
+            try:
+                if os.path.exists(file):
+                    copy2(file, destino)
+                    _print(f"arquivo {os.path.basename(file)} copiado !")
+                    try:
                         os.unlink(file)
+                    except PermissionError:
+                        print(traceback.format_exc())
+                        if Functions.fechar_excel(file):
+                            os.unlink(file)
+                else:
+                    raise Exception(f"{file=} não existe!")
+            except Exception as error:
+                print(traceback.format_exc())
         _print("Script Finalizado com Sucesso!")
 
 if __name__ == "__main__":

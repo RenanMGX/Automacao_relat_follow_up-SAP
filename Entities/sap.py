@@ -25,6 +25,12 @@ class SAPManipulation():
     @property
     def session(self) -> win32com.client.CDispatch:
         return self.__session
+    @session.deleter
+    def session(self) -> None:
+        try:
+            del self.__session
+        except:
+            pass
     
     @property
     def log(self) -> Log:
@@ -115,6 +121,8 @@ class SAPManipulation():
                 self.session.findById('wnd[1]/usr/btnSPOP-OPTION1').press()
             except:
                 self.session.findById('wnd[2]/usr/btnSPOP-OPTION1').press()
+            del self.session
+            
         except Exception as error:
             if not "(-2147417848, 'O objeto chamado foi desconectado de seus clientes.', None, None)" in str(error):
                 _print(f"não foi possivel fechar o SAP {type(error)} | {error}")

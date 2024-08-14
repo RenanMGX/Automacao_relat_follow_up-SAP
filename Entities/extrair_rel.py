@@ -5,6 +5,7 @@ from .functions import Functions, _print
 from .logs import Log
 from datetime import datetime
 import pandas as pd
+import traceback
 
 class ExtrairSAP(SAPManipulation):
     @property
@@ -41,6 +42,14 @@ class ExtrairSAP(SAPManipulation):
         if not os.path.exists(download_path):
             os.makedirs(download_path)
         self.__download_path:str = download_path
+        for file in os.listdir(self.__download_path):
+            file = os.path.join(self.__download_path, file)
+            if os.path.isfile(file):
+                try:
+                    os.unlink(file)
+                except:
+                    pass
+        
         
         for file in os.listdir(self.download_path):
             if file.endswith('.xlsx'):
@@ -235,6 +244,78 @@ class ExtrairSAP(SAPManipulation):
         return file_full_path
         #import pdb;pdb.set_trace()
     
+    @SAPManipulation.start_SAP
+    def extrair_relatorio_base(self) -> str:
+        caminho:str = self.download_path
+        file_name:str = "BASE CENTROS.txt"
+        
+        try:
+            self.session.findById("wnd[0]/tbar[0]/okcd").text = "/n me5a"
+            self.session.findById("wnd[0]").sendVKey(0)
+            self.session.findById("wnd[0]/usr/ctxtS_WERKS-LOW").setFocus()
+            self.session.findById("wnd[0]/usr/ctxtS_WERKS-LOW").caretPosition = 0
+            self.session.findById("wnd[0]").sendVKey(4)
+            self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
+            self.session.findById("wnd[1]").sendVKey(14)
+            self.session.findById("wnd[2]/tbar[0]/btn[0]").press()
+            self.session.findById("wnd[2]/usr/ctxtDY_PATH").text = caminho
+            self.session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = file_name
+            self.session.findById("wnd[2]/tbar[0]/btn[0]").press()
+            self.session.findById("wnd[1]/tbar[0]/btn[12]").press()
+            
+            caminho = os.path.join(caminho, file_name)
+            caminho = ExtrairSAP.tratar_base(caminho)
+            _print(f"Relatorio 'relatorio_base' foi gerado e salvo!")
+            return caminho
+            
+        except Exception as error:
+            self.log.register_error()
+            return "None"
+        
+    @staticmethod
+    def tratar_base(path:str) -> str:
+        log:Log = Log("tratar_base")
+        try:
+            if not path.endswith('.txt'):
+                try:
+                    raise Exception(f"o arquivo não é .txt '{path}'")
+                except Exception as error:
+                    log.register_error()
+                return "None"
+                
+            if os.path.exists(path):
+                with open(path, 'r')as _file:
+                    linhas:list = _file.read().split('\n')
+                linhas = linhas[3:-2]
+                dados = {
+                    "Divisão": [],
+                    "Descrição": [],
+                    "CEP": [],
+                    "Cidade": [],
+                    "Responsável": []
+                }
+                for linha in linhas:
+                    dados_temp = linha.split('|')
+                    dados["Divisão"].append(dados_temp[1])
+                    dados['Descrição'].append(dados_temp[4])
+                    dados['CEP'].append(dados_temp[5])
+                    dados['Cidade'].append(dados_temp[6])
+                    dados['Responsável'].append(" ")
+            
+                new_file = path.replace('.txt', '.xlsx')
+                os.unlink(path)
+                pd.DataFrame(dados).to_excel(new_file, index=False)
+                return new_file
+            
+            else:
+                try:
+                    raise Exception("arquivo não encontrado")
+                except Exception as error:
+                    log.register_error
+                return "None"
+        except Exception as error:
+            log.register_error()
+            return "None"
     
     @SAPManipulation.start_SAP
     def __encerrar(self, fechar_sap_no_final:bool):
@@ -244,6 +325,10 @@ class ExtrairSAP(SAPManipulation):
         self.__encerrar(fechar_sap_no_final=True)
         if mostrar_na_tela:
             _print("Relatorios finalizados SAP encerrado!")
+    
+    @SAPManipulation.start_SAP
+    def test_in_sap(self):
+        print()        
 
     
 if __name__ == "__main__":
