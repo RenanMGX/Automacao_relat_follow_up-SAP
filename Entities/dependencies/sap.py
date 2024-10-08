@@ -1,46 +1,50 @@
-from .dependencies.logs import Logs
+from Entities.dependencies.logs import Logs
+from Entities.dependencies.functions import P
+from getpass import getuser
 import win32com.client
 from datetime import datetime
 import psutil
 import subprocess
 from time import sleep
 import traceback
-from typing import Literal
-
-def _print(*args, end="\n"):
-    if not end.endswith("\n"):
-        end += "\n"
-    value = ""
-    for arg in args:
-        value += f"{arg} " 
-    
-    print(datetime.now().strftime(f"[%d/%m/%Y - %H:%M:%S] - {value}"), end=end)
 
 
 class SAPManipulation():
     @property
-    def ambiente(self) -> str:
+    def ambiente(self) -> str|None:
         return self.__ambiente
     
     @property
     def session(self) -> win32com.client.CDispatch:
         return self.__session
     @session.deleter
-    def session(self) -> None:
+    def session(self):
         try:
             del self.__session
         except:
             pass
         
     @property
+    def log(self) -> Logs:
+        return Logs()
+    
+    @property
     def using_active_conection(self) -> bool:
         return self.__using_active_conection
     
-    def __init__(self, *, user:str="", password:str="", ambiente:str="", using_active_conection:Literal[False, True]=False) -> None:
+    def __init__(self, *, user:str|None="", password:str|None="", ambiente:str|None="", using_active_conection:bool=False) -> None:
+        if not using_active_conection:
+            if not ((user) and (password) and (ambiente)):
+                raise Exception(f"""é necessario preencher todos os campos \n
+                                {user=}\n
+                                {password=} \n 
+                                {ambiente=} \n                            
+                                """)
+        
         self.__using_active_conection = using_active_conection
-        self.__user:str = user
-        self.__password:str = password
-        self.__ambiente:str = ambiente
+        self.__user:str|None = user
+        self.__password:str|None = password
+        self.__ambiente:str|None = ambiente
          
     #decorador
     @staticmethod
@@ -49,7 +53,7 @@ class SAPManipulation():
             try:
                 self.session
             except AttributeError:
-                self.__conectar_sap()
+                self.conectar_sap()
             try:
                 result =  f(self, *args, **kwargs)
             finally:
@@ -63,7 +67,7 @@ class SAPManipulation():
                 #raise Exception("o sap precisa ser conectado primeiro!")
         return wrap
     
-    def __conectar_sap(self) -> None:
+    def conectar_sap(self) -> None:
         self.__session: win32com.client.CDispatch
         if not self.using_active_conection:
             try:
@@ -76,17 +80,21 @@ class SAPManipulation():
                 connection = application.OpenConnection(self.__ambiente, True) # type: ignore
                 self.__session = connection.Children(0)# type: ignore
                 
-                
                 self.session.findById("wnd[0]/usr/txtRSYST-BNAME").text = self.__user # Usuario
                 self.session.findById("wnd[0]/usr/pwdRSYST-BCODE").text = self.__password # Senha
                 self.session.findById("wnd[0]").sendVKey(0)
                 
+                try:
+                    if (sbar:=self.session.findById("wnd[0]/sbar").text):
+                        print(sbar)
+                except:
+                    pass
                 return 
             except Exception as error:
                 if "connection = application.OpenConnection(self.__ambiente, True)" in traceback.format_exc():
                     raise Exception("SAP está fechado!")
                 else:
-                    Logs().register(status='Error', description="não foi possivel se conectar ao SAP", exception=traceback.format_exc())
+                    self.log.register(status='Error', description=str(error), exception=traceback.format_exc())
                     raise ConnectionError(f"não foi possivel se conectar ao SAP motivo: {type(error).__class__} -> {error}")
         else:
             try:
@@ -104,11 +112,11 @@ class SAPManipulation():
                 elif "SAP está fechado!" in traceback.format_exc():
                     raise Exception("SAP está fechado!")
                 else:
-                    Logs().register(status='Error', description="ao manipular o SAP", exception=traceback.format_exc())
+                    self.log.register(status='Error', description=str(error), exception=traceback.format_exc())
 
     #@usar_sap
     def fechar_sap(self):
-        _print("fechando SAP!")
+        print("fechando SAP!")
         try:
             sleep(1)
             self.session.findById("wnd[0]").close()
@@ -117,17 +125,15 @@ class SAPManipulation():
                 self.session.findById('wnd[1]/usr/btnSPOP-OPTION1').press()
             except:
                 self.session.findById('wnd[2]/usr/btnSPOP-OPTION1').press()
-            del self.session
-            
+                del self.__session
         except Exception as error:
-            if not "(-2147417848, 'O objeto chamado foi desconectado de seus clientes.', None, None)" in str(error):
-                _print(f"não foi possivel fechar o SAP {type(error)} | {error}")
+            print(f"não foi possivel fechar o SAP {type(error)} | {error}")
 
     @start_SAP
     def _listar(self, campo):
         cont = 0
         for child_object in self.session.findById(campo).Children:
-            _print(f"{cont}: ","ID:", child_object.Id, "| Type:", child_object.Type, "| Text:", child_object.Text)
+            print(f"{cont}: ","ID:", child_object.Id, "| Type:", child_object.Type, "| Text:", child_object.Text)
             cont += 1
 
     def _verificar_sap_aberto(self) -> bool:
@@ -138,7 +144,7 @@ class SAPManipulation():
     
     @start_SAP
     def _teste(self):
-        _print("testado")
+        print("testado")
   
 if __name__ == "__main__":
     pass

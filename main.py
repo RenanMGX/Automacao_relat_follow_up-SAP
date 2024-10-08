@@ -1,11 +1,12 @@
 from Entities.extrair_rel import ExtrairSAP
 from Entities.credenciais import Credential
-from Entities.logs import Log
+from Entities.dependencies.logs import Logs
 from Entities.functions import Functions, _print
 from shutil import copy2
 from getpass import getuser
 import os
 import traceback
+from Entities.dependencies.config import Config
 
 class Execute(ExtrairSAP):
     def __init__(self, *, user: str = "", password: str = "", ambiente: str = "") -> None:
@@ -55,12 +56,13 @@ class Execute(ExtrairSAP):
 
 if __name__ == "__main__":
     try:
-        crd:dict = Credential('SAP_PRD').load()
+        crd:dict = Credential(Config()['credential']['crd']).load()
         
         bot = Execute(user=crd['user'], password=crd['password'], ambiente=crd['ambiente'])
         
-        bot.start(destino=f"C:\\Users\\{getuser()}\\PATRIMAR ENGENHARIA S A\\RPA - Documentos\\RPA - Dados\\Follow UP\\relatorios")
+        bot.start(destino=Config()['paths']['destino'])
         
-    except Exception as error:
-        Log('main').register_error()
+        Logs().register(status='Concluido', description="Extração Concluida!")
+    except Exception as err:
+        Logs().register(status='Error', description='erro na extração dos relatorios do Follow UP', exception=traceback.format_exc())
     

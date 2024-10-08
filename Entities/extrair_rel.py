@@ -2,7 +2,7 @@ from typing import Literal
 from .sap import SAPManipulation
 import os
 from .functions import Functions, _print
-from .logs import Log
+from .dependencies.logs import Logs
 from datetime import datetime
 import pandas as pd
 import traceback
@@ -11,11 +11,7 @@ class ExtrairSAP(SAPManipulation):
     @property
     def download_path(self) -> str:
         return self.__download_path
-    
-    @property
-    def log(self) -> Log:
-        return Log(self.__class__.__name__)
-    
+        
     @property
     def variante(self) -> dict:
         return {
@@ -98,7 +94,7 @@ class ExtrairSAP(SAPManipulation):
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
             return rel
         except Exception as error:
-            Log(file_name).register_error()
+            Logs().register(status='Error', description=f"erro ao gerar relatorio '{file_name}' vide pasta logs", exception=traceback.format_exc())
             _print(f"erro ao gerar relatorio '{file_name}' vide pasta logs")
             return "None"
 
@@ -123,7 +119,7 @@ class ExtrairSAP(SAPManipulation):
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
             return rel
         except Exception as error:
-            Log(file_name).register_error()
+            Logs().register(status='Error', description=f"erro ao gerar relatorio '{file_name}' vide pasta logs", exception=traceback.format_exc())
             _print(f"erro ao gerar relatorio '{file_name}' vide pasta logs")
             return "None"
         
@@ -268,19 +264,18 @@ class ExtrairSAP(SAPManipulation):
             _print(f"Relatorio 'relatorio_base' foi gerado e salvo!")
             return caminho
             
-        except Exception as error:
-            self.log.register_error()
+        except Exception as err:
+            Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
             return "None"
         
     @staticmethod
     def tratar_base(path:str) -> str:
-        log:Log = Log("tratar_base")
         try:
             if not path.endswith('.txt'):
                 try:
                     raise Exception(f"o arquivo não é .txt '{path}'")
-                except Exception as error:
-                    log.register_error()
+                except Exception as err:
+                    Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
                 return "None"
                 
             if os.path.exists(path):
@@ -310,11 +305,11 @@ class ExtrairSAP(SAPManipulation):
             else:
                 try:
                     raise Exception("arquivo não encontrado")
-                except Exception as error:
-                    log.register_error
+                except Exception as err:
+                    Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
                 return "None"
-        except Exception as error:
-            log.register_error()
+        except Exception as err:
+            Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
             return "None"
     
     @SAPManipulation.start_SAP
