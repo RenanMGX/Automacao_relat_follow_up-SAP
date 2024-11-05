@@ -5,6 +5,7 @@
 *download_relatorios
 *.vscode
 *config.init
+*Logs
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
