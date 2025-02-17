@@ -33,7 +33,7 @@ class ExtrairSAP(SAPManipulation):
     #     return ['FOLLOW UP CONTRATOS']
     
     def __init__(self, *, user: str = "", password: str = "", ambiente: str = "", download_path:str=os.path.join(os.getcwd(), 'download_relatorios')) -> None:
-        super().__init__(user=user, password=password, ambiente=ambiente)
+        super().__init__(user=user, password=password, ambiente=ambiente, new_conection=True)
         
         if not os.path.exists(download_path):
             os.makedirs(download_path)
