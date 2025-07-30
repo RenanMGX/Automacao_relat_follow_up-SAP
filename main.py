@@ -1,15 +1,13 @@
 from Entities.extrair_rel import ExtrairSAP
-from Entities.credenciais import Credential
-from Entities.dependencies.logs import Logs
 from Entities.functions import Functions, _print
 from shutil import copy2
 from getpass import getuser
 import os
 import traceback
-from Entities.dependencies.config import Config
+from patrimar_dependencies.sharepointfolder import SharePointFolders
 
-class Execute(ExtrairSAP):
-    def __init__(self, *, user: str = "", password: str = "", ambiente: str = "") -> None:
+class ExecuteAPP(ExtrairSAP):
+    def __init__(self, *, user:str, password:str, ambiente:str) -> None:
         super().__init__(user=user, password=password, ambiente=ambiente)
     
     def start(self, destino:str):
@@ -55,14 +53,32 @@ class Execute(ExtrairSAP):
         _print("Script Finalizado com Sucesso!")
 
 if __name__ == "__main__":
-    try:
-        crd:dict = Credential(Config()['credential']['crd']).load()
+    from patrimar_dependencies.credenciais import Credential
+    
+    sap_crd:dict = Credential(
+        path_raiz=SharePointFolders(r'RPA - Dados\CRD\.patrimar_rpa\credenciais').value,
+        name_file="SAP_PRD"
+    ).load()
+    
+    
+    ExecuteAPP(
+        user=sap_crd['user'], 
+        password=sap_crd['password'], 
+        ambiente=sap_crd['ambiente']
+    ).start(
+        destino=r"#material\testes"
+    )
+    
+    
+    
+    # try:
+    #     crd:dict = Credential(Config()['credential']['crd']).load()
         
-        bot = Execute(user=crd['user'], password=crd['password'], ambiente=crd['ambiente'])
+    #     bot = Execute(user=crd['user'], password=crd['password'], ambiente=crd['ambiente'])
         
-        bot.start(destino=Config()['paths']['destino'])
+    #     bot.start(destino=Config()['paths']['destino'])
         
-        Logs().register(status='Concluido', description="Extração Concluida!")
-    except Exception as err:
-        Logs().register(status='Error', description='erro na extração dos relatorios do Follow UP', exception=traceback.format_exc())
+    #     Logs().register(status='Concluido', description="Extração Concluida!")
+    # except Exception as err:
+    #     Logs().register(status='Error', description='erro na extração dos relatorios do Follow UP', exception=traceback.format_exc())
     

@@ -6,6 +6,10 @@
 *.vscode
 *config.init
 *Logs
+*json
+*zip
+*.ipynb
+*teste.py
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

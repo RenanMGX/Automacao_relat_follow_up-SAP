@@ -1,11 +1,12 @@
 from typing import Literal
-from .sap import SAPManipulation
+from patrimar_dependencies.sap import SAPManipulation
 import os
 from .functions import Functions, _print
-from .dependencies.logs import Logs
 from datetime import datetime
 import pandas as pd
 import traceback
+from botcity.maestro import * # type: ignore
+from time import sleep
 
 class ExtrairSAP(SAPManipulation):
     @property
@@ -33,6 +34,13 @@ class ExtrairSAP(SAPManipulation):
     #     return ['FOLLOW UP CONTRATOS']
     
     def __init__(self, *, user: str = "", password: str = "", ambiente: str = "", download_path:str=os.path.join(os.getcwd(), 'download_relatorios')) -> None:
+        self.__maestro:BotMaestroSDK|None
+        try:
+            self.__maestro = BotMaestroSDK.from_sys_args()
+            self.__maestro.get_execution()
+        except:
+            self.__maestro = None
+        
         super().__init__(user=user, password=password, ambiente=ambiente, new_conection=True)
         
         if not os.path.exists(download_path):
@@ -53,6 +61,7 @@ class ExtrairSAP(SAPManipulation):
                 try:
                     os.unlink(file)
                 except PermissionError:
+                    sleep(2)
                     if Functions.fechar_excel(file):
                         os.unlink(file)
         
@@ -88,13 +97,19 @@ class ExtrairSAP(SAPManipulation):
                     break
                 except Exception as error:
                     erro = error
-            if erro != "":
+            if erro != "":#type: ignore
                 raise erro #type: ignore
                     
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
-            return rel
+            return rel#type: ignore
         except Exception as error:
-            Logs().register(status='Error', description=f"erro ao gerar relatorio '{file_name}' vide pasta logs", exception=traceback.format_exc())
+            if not self.__maestro is None:            
+                self.__maestro.alert(
+                    task_id=self.__maestro.get_execution().task_id,
+                    title=f"erro ao gerar relatorio '{file_name}' vide pasta logs",
+                    message=str(traceback.format_exc()),
+                    alert_type=AlertType.ERROR
+                )
             _print(f"erro ao gerar relatorio '{file_name}' vide pasta logs")
             return "None"
 
@@ -113,13 +128,19 @@ class ExtrairSAP(SAPManipulation):
                     break
                 except Exception as error:
                     erro = error
-            if erro != "":
+            if erro != "":#type: ignore
                 raise erro #type: ignore
             
             _print(f"Relatorio '{file_name}' foi gerado e salvo!")
-            return rel
+            return rel #type: ignore
         except Exception as error:
-            Logs().register(status='Error', description=f"erro ao gerar relatorio '{file_name}' vide pasta logs", exception=traceback.format_exc())
+            if not self.__maestro is None:            
+                self.__maestro.alert(
+                    task_id=self.__maestro.get_execution().task_id,
+                    title=f"erro ao gerar relatorio '{file_name}' vide pasta logs",
+                    message=str(traceback.format_exc()),
+                    alert_type=AlertType.ERROR
+                )
             _print(f"erro ao gerar relatorio '{file_name}' vide pasta logs")
             return "None"
         
@@ -236,6 +257,7 @@ class ExtrairSAP(SAPManipulation):
         self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
                 
         file_full_path = os.path.join(caminho, file_name)
+        sleep(10)
         Functions.fechar_excel(file_full_path)
         return file_full_path
         #import pdb;pdb.set_trace()
@@ -265,17 +287,38 @@ class ExtrairSAP(SAPManipulation):
             return caminho
             
         except Exception as err:
-            Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
+            if not self.__maestro is None:            
+                self.__maestro.alert(
+                    task_id=self.__maestro.get_execution().task_id,
+                    title=str(err),
+                    message=str(traceback.format_exc()),
+                    alert_type=AlertType.ERROR
+                )
+            
             return "None"
         
     @staticmethod
     def tratar_base(path:str) -> str:
+        maestro:BotMaestroSDK|None
+        try:
+            maestro = BotMaestroSDK.from_sys_args()
+            maestro.get_execution()
+        except:
+            maestro = None
+        
+        
         try:
             if not path.endswith('.txt'):
                 try:
                     raise Exception(f"o arquivo não é .txt '{path}'")
                 except Exception as err:
-                    Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
+                    if not maestro is None:            
+                        maestro.alert(
+                            task_id=maestro.get_execution().task_id,
+                            title=str(err),
+                            message=str(traceback.format_exc()),
+                            alert_type=AlertType.ERROR
+                        )
                 return "None"
                 
             if os.path.exists(path):
@@ -306,10 +349,22 @@ class ExtrairSAP(SAPManipulation):
                 try:
                     raise Exception("arquivo não encontrado")
                 except Exception as err:
-                    Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
+                    if not maestro is None:            
+                        maestro.alert(
+                            task_id=maestro.get_execution().task_id,
+                            title=str(err),
+                            message=str(traceback.format_exc()),
+                            alert_type=AlertType.ERROR
+                        )
                 return "None"
         except Exception as err:
-            Logs().register(status='Error', description=str(err), exception=traceback.format_exc())
+            if not maestro is None:            
+                maestro.alert(
+                    task_id=maestro.get_execution().task_id,
+                    title=str(err),
+                    message=str(traceback.format_exc()),
+                    alert_type=AlertType.ERROR
+                )
             return "None"
     
     @SAPManipulation.start_SAP

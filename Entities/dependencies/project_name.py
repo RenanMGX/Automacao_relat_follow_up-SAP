@@ -1,1 +1,0 @@
-PROJECT_NAME:str = "Relatorios Follow Up"
